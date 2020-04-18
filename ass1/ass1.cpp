@@ -3,7 +3,7 @@
 #include <cstring>
 using namespace std;
 
-const int MaxWordSize = 45;
+const int MaxWordSize = 45; //The largest word in any of the major English dictionaries contains 45 letters
 
 class Word
 {
@@ -28,7 +28,7 @@ class Dictionary
    private:
       Word **words_;
       unsigned int capacity_; // max number of words Dictionary can hold
-      unsigned int numberOfWordsInDictionary_;
+      unsigned int numberOfWordsInDictionary_; // current number of words stored in Dictionary
       void resize();
       void addWordToDictionary(char *word);
    public:
@@ -71,7 +71,7 @@ void Dictionary::addWordToDictionary(char *word)
 {
    int index = numberOfWordsInDictionary_;
 
-   if (numberOfWordsInDictionary_ > capacity_)
+   if (numberOfWordsInDictionary_ >= capacity_) //Once at capacity, resize the pointer to objects array Words by doubling size
       resize();
    words_[index] = new Word(word);
    numberOfWordsInDictionary_++;
@@ -81,12 +81,12 @@ void Dictionary::resize()
 {
    Word **temp = new Word*[capacity_];
 
-   for (unsigned int i = 0; i <= capacity_; i++)
+   for (unsigned int i = 0; i < capacity_; i++)
       temp[i] = words_[i];
    delete[] words_; //delete the array of pointers
    capacity_ *= 2; //double the array size
    words_ = new Word*[capacity_];
-   for (unsigned int i = 0; i <= capacity_ / 2; i++)
+   for (unsigned int i = 0; i < capacity_ / 2; i++)
       words_[i] = temp[i];
    delete[] temp;
    cout << "Dictionary resized to capacity: " << capacity_ << endl;
@@ -133,6 +133,7 @@ int main()
    char buffer[MaxWordSize];
    Dictionary Websters("words");
    ifstream fin("gettysburg.txt");
+
    if (!fin)
    {
       cerr << "Error occurred in attempt to open input file\n";

@@ -14,10 +14,11 @@ class Word
       {
          word_ = new char[strlen(text) + 1];
          strcpy(word_, text);
+         if (isupper(word_[0]))
+            word_[0] += 32; //Converts dictionary word from upper-case to lower-case
       }
-
-      ~Word()
-      { delete word_;}
+      ~Word() //Destructor is invoked when 'delete' keyword is used explicitly to free dynamically allocated object
+      { delete[] word_; } //Free allocated char * array memory within this context
       const char* getWord() const
       { return word_; }
 };
@@ -32,17 +33,9 @@ class Dictionary
       void addWordToDictionary(char *word);
    public:
       Dictionary(const char* filename);
-      ~Dictionary()
-      {delete[] words_; }
+      ~Dictionary();
       bool find(const char* word);
-      void printAllWords();
 };
-
-void Dictionary::printAllWords()
-{
-   for (int i = 0; i < capacity_; i++)
-      cout << words_[i]->getWord() << endl;
-}
 
 Dictionary::Dictionary(const char* filename)
 {
@@ -64,8 +57,14 @@ Dictionary::Dictionary(const char* filename)
       line = strtok(line, "\r");
       addWordToDictionary(line);
    }
-   //printAllWords();
    fin.close();
+}
+
+Dictionary::~Dictionary()
+{
+   for (unsigned int i = 0; i < numberOfWordsInDictionary_; i++)
+      delete words_[i]; //Free each dynamically allocated 'Word' object
+   delete[] words_; //Free array of pointer to objects
 }
 
 void Dictionary::addWordToDictionary(char *word)
@@ -75,7 +74,6 @@ void Dictionary::addWordToDictionary(char *word)
    if (numberOfWordsInDictionary_ > capacity_)
       resize();
    words_[index] = new Word(word);
-   //cout << words_[index]->getWord() << endl;
    numberOfWordsInDictionary_++;
 }
 
@@ -83,29 +81,28 @@ void Dictionary::resize()
 {
    Word **temp = new Word*[capacity_];
 
-   temp = words_;
+   for (unsigned int i = 0; i <= capacity_; i++)
+      temp[i] = words_[i];
    delete[] words_; //delete the array of pointers
    capacity_ *= 2; //double the array size
    words_ = new Word*[capacity_];
-   words_ = temp;
+   for (unsigned int i = 0; i <= capacity_ / 2; i++)
+      words_[i] = temp[i];
    delete[] temp;
    cout << "Dictionary resized to capacity: " << capacity_ << endl;
 }
 
 bool Dictionary::find(const char *word)
 {
-   int first = 0, last = capacity_, middle;
+   int first = 0, last = numberOfWordsInDictionary_, middle;
    bool flag = false;
 
    while (!flag && first <= last)
    {
       middle = (first + last) / 2;
-      cout << words_[16384]->getWord() << endl;
       if (!strcmp(words_[middle]->getWord(), word))
-      {
          flag = true;
-      }
-      else if (strcmp(words_[middle]->getWord(), word) < 0)
+      else if (strcmp(words_[middle]->getWord(), word) > 0)
          last = middle - 1;
       else
          first = middle + 1;
@@ -118,21 +115,17 @@ bool cleanupWord(char *buffer)
    bool flag = true;
    int i, buf_size = strlen(buffer);
 
-   if (isupper(buffer[0]))
-      buffer[0] += 32; //Converts upper-case to lower-case
-   if (!isalpha(buffer[0]))
+   if (isupper(buffer[0])) //Converts any leading letter of word from upper-case to lower-case
+      buffer[0] += 32;
+   if (!isalpha(buffer[buf_size - 1])) //Checks then removes any trailing punctuation
    {
-      for (i = 1; !isalpha(buffer[i]) || i < buf_size; i++) {}
-      if (i == buf_size)
-         flag = false;
-   }
-   if (!isalpha(buffer[buf_size]))
-   {
-      for (i = buf_size; !isalpha(buffer[i]) || i > 0; i--) {}
+      for (i = buf_size; !isalpha(buffer[i]) && i > 0; i--) {}
       if (i > 0)
          buffer[i + 1] = '\0';
+      else
+         flag = false;
    }
-   return flag;
+   return flag; //Returns false if buffer contains no alphabets in which no attempt to search is made
 }
 
 int main()
